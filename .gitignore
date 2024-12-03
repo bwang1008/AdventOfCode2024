@@ -1,2 +1,5 @@
+# executables
+*.out
+
 # editors
 *.swp

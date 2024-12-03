@@ -2,11 +2,22 @@
 
 Solutions in C++, compiled using g++ 9.4.0.
 
+Compilation example:
+
+```bash
+g++ -std=c++2a -Wall -Wextra -Wpedantic -pedantic-errors -Wmissing-braces -Wmissing-include-dirs -Wswitch-default -Wunused -Wuninitialized -Wunknown-pragmas -Wmissing-noreturn -Wsuggest-attribute=pure -Wsuggest-attribute=const -Wsuggest-attribute=noreturn -Wsuggest-attribute=malloc -Wbool-compare -Wduplicated-branches -Wduplicated-cond -Wdouble-promotion -Wfloat-equal -Wshadow -Wunsafe-loop-optimizations -Wunused-macros -Wcast-qual -Wconversion -Wdate-time -Wsign-conversion -Wlogical-op -Wredundant-decls -fno-operator-names -fno-common -fsanitize=address -fstack-protector-all main.cpp -o main.out
+```
+
 .clang-tidy generated via
 
 ```bash
-clang-tidy --dump-config --checks=* -- --std=c++20 > .clang-tidy
+clang-tidy --dump-config --checks=*,-fuchsia-default-arguments-calls,-fuchsia-trailing-return -- --std=c++20 > .clang-tidy
 ```
+
+Ignored checks:
+
+- fuchsia-default-arguments-calls: extraneous warnings on standard-library function calls
+- fuchsia-trailing-return: conflicts with modernize-use-trailing-return-type
 
 .clang-format generated via
 
