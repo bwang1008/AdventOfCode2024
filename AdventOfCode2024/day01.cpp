@@ -8,7 +8,7 @@
 
 #include "day.hpp"
 
-auto parse_input() -> std::pair<std::vector<int>, std::vector<int>> {
+static auto parse_input() -> std::pair<std::vector<int>, std::vector<int>> {
     const std::string input_file_name{"data/day01.txt"};
     std::ifstream input_file{input_file_name};
 
@@ -45,7 +45,7 @@ auto solve_day01a() -> int64_t {
     return total_distance;
 }
 
-auto solve_01b() -> int64_t {
+auto solve_day01b() -> int64_t {
     std::pair<std::vector<int>, std::vector<int>> input_data = parse_input();
     std::vector<int> list1 = input_data.first;
     std::vector<int> list2 = input_data.second;

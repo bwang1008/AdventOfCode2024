@@ -4,7 +4,7 @@
 
 #include "day.hpp"
 
-auto parse_input() -> std::string {
+static auto parse_input() -> std::string {
     const std::string input_file_name{"data/day03.txt"};
     std::ifstream input_file{input_file_name};
 

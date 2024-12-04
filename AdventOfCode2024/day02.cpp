@@ -23,7 +23,7 @@ auto split(const std::string &text, const char delimiter)
     return tokens;
 }
 
-auto parse_input() -> std::vector<std::vector<int>> {
+static auto parse_input() -> std::vector<std::vector<int>> {
     const std::string input_file_name{"data/day02.txt"};
     std::ifstream input_file{input_file_name};
 
