@@ -1,9 +1,10 @@
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <iterator>
 #include <string>
 #include <vector>
+
+#include "day.hpp"
 
 constexpr const int INCREASE_LOWER_BOUND = 1;
 constexpr const int INCREASE_UPPER_BOUND = 3;
@@ -117,7 +118,7 @@ auto report_is_safe_with_problem_dampener(std::vector<int> report) -> bool {
     return true;
 }
 
-auto solve_a() -> int64_t {
+auto solve_day02a() -> int64_t {
     const std::vector<std::vector<int>> reports = parse_input();
     int64_t count = 0;
     for(const std::vector<int> &report : reports) {
@@ -129,7 +130,7 @@ auto solve_a() -> int64_t {
     return count;
 }
 
-auto solve_b() -> int64_t {
+auto solve_day02b() -> int64_t {
     const std::vector<std::vector<int>> reports = parse_input();
     int64_t count = 0;
     for(const std::vector<int> &report : reports) {
@@ -139,26 +140,4 @@ auto solve_b() -> int64_t {
     }
 
     return count;
-}
-
-auto main(int argc, char *argv[]) -> int {
-    const std::vector<std::string> args(argv, argv + argc);
-    if(argc != 2) {
-        std::cerr << "An argument 'A' or 'B' is required" << std::endl;
-        return 1;
-    }
-    const std::string which_problem{args[1]};
-
-    int64_t result = 0;
-    if(which_problem == "A") {
-        result = solve_a();
-    } else if(which_problem == "B") {
-        result = solve_b();
-    } else {
-        std::cerr << "Argument must be either 'A' or 'B'" << std::endl;
-        return 1;
-    }
-
-    std::cout << result << std::endl;
-    return 0;
 }

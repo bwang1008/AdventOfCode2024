@@ -1,9 +1,12 @@
 #include <cstdint>
+#include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
+
+#include "day.hpp"
 
 auto parse_input() -> std::pair<std::vector<int>, std::vector<int>> {
     const std::string input_file_name{"data/day01.txt"};
@@ -26,7 +29,7 @@ auto parse_input() -> std::pair<std::vector<int>, std::vector<int>> {
     return std::pair<std::vector<int>, std::vector<int>>(list1, list2);
 }
 
-auto solve_a() -> int64_t {
+auto solve_day01a() -> int64_t {
     std::pair<std::vector<int>, std::vector<int>> input_data = parse_input();
     std::vector<int> list1 = input_data.first;
     std::vector<int> list2 = input_data.second;
@@ -42,7 +45,7 @@ auto solve_a() -> int64_t {
     return total_distance;
 }
 
-auto solve_b() -> int64_t {
+auto solve_01b() -> int64_t {
     std::pair<std::vector<int>, std::vector<int>> input_data = parse_input();
     std::vector<int> list1 = input_data.first;
     std::vector<int> list2 = input_data.second;
@@ -58,26 +61,4 @@ auto solve_b() -> int64_t {
     }
 
     return similarity_score;
-}
-
-auto main(int argc, char *argv[]) -> int {
-    const std::vector<std::string> args(argv, argv + argc);
-    if(argc != 2) {
-        std::cerr << "An argument 'A' or 'B' is required" << std::endl;
-        return 1;
-    }
-    const std::string which_problem{args[1]};
-
-    int64_t result = 0;
-    if(which_problem == "A") {
-        result = solve_a();
-    } else if(which_problem == "B") {
-        result = solve_b();
-    } else {
-        std::cerr << "Argument must be either 'A' or 'B'" << std::endl;
-        return 1;
-    }
-
-    std::cout << result << std::endl;
-    return 0;
 }

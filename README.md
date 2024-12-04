@@ -11,13 +11,14 @@ g++ -std=c++2a -Wall -Wextra -Wpedantic -pedantic-errors -Wmissing-braces -Wmiss
 .clang-tidy generated via
 
 ```bash
-clang-tidy --dump-config --checks=*,-fuchsia-default-arguments-calls,-fuchsia-trailing-return -- --std=c++20 > .clang-tidy
+clang-tidy --dump-config --checks=*,-fuchsia-default-arguments-calls,-fuchsia-trailing-return,-llvm-header-guard -- --std=c++20 > .clang-tidy
 ```
 
 Ignored checks:
 
 - fuchsia-default-arguments-calls: extraneous warnings on standard-library function calls
 - fuchsia-trailing-return: conflicts with modernize-use-trailing-return-type
+- llvm-header-guard: do not want to expose full path of file
 
 .clang-format generated via
 

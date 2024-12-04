@@ -1,8 +1,8 @@
 #include <fstream>
-#include <iostream>
 #include <regex>
 #include <string>
-#include <vector>
+
+#include "day.hpp"
 
 auto parse_input() -> std::string {
     const std::string input_file_name{"data/day03.txt"};
@@ -17,7 +17,7 @@ auto parse_input() -> std::string {
     return input;
 }
 
-auto solve_a() -> int64_t {
+auto solve_day03a() -> int64_t {
     // see https://en.cppreference.com/w/cpp/regex
     const std::regex mul_pattern(R"(mul\((\d+),(\d+)\))");
     int64_t sum = 0;
@@ -36,7 +36,7 @@ auto solve_a() -> int64_t {
     return sum;
 }
 
-auto solve_b() -> int64_t {
+auto solve_day03b() -> int64_t {
     // see https://en.cppreference.com/w/cpp/regex
     const std::regex mul_pattern(R"(mul\((\d+),(\d+)\)|do\(\)|don't\(\))");
     int64_t sum = 0;
@@ -62,26 +62,4 @@ auto solve_b() -> int64_t {
         }
     }
     return sum;
-}
-
-auto main(int argc, char *argv[]) -> int {
-    const std::vector<std::string> args(argv, argv + argc);
-    if(argc != 2) {
-        std::cerr << "An argument 'A' or 'B' is required" << std::endl;
-        return 1;
-    }
-    const std::string which_problem{args[1]};
-
-    int64_t result = 0;
-    if(which_problem == "A") {
-        result = solve_a();
-    } else if(which_problem == "B") {
-        result = solve_b();
-    } else {
-        std::cerr << "Argument must be either 'A' or 'B'" << std::endl;
-        return 1;
-    }
-
-    std::cout << result << std::endl;
-    return 0;
 }
