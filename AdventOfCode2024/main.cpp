@@ -10,8 +10,8 @@ auto solve(const std::size_t day, const std::string &problem_version)
     const std::size_t star_index =
         2 * (day - 1) + ((problem_version == "B") ? 1 : 0);
     const std::vector<int64_t (*)()> problem_to_solver{
-        &solve_day01a, &solve_day01b, &solve_day02a,
-        &solve_day02b, &solve_day03a, &solve_day03b,
+        &solve_day01a, &solve_day01b, &solve_day02a, &solve_day02b,
+        &solve_day03a, &solve_day03b, &solve_day04a, &solve_day04b,
     };
 
     int64_t (*const specific_solver_function)() =
