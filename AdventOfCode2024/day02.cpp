@@ -5,23 +5,10 @@
 #include <vector>
 
 #include "day.hpp"
+#include "utils.hpp"
 
 constexpr const int INCREASE_LOWER_BOUND = 1;
 constexpr const int INCREASE_UPPER_BOUND = 3;
-
-auto split(const std::string &text, const char delimiter)
-    -> std::vector<std::string> {
-    std::vector<std::string> tokens;
-    std::size_t last = 0;
-    std::size_t next = 0;
-    while((next = text.find(delimiter, last)) != std::string::npos) {
-        tokens.push_back(text.substr(last, next - last));
-        last = next + 1;
-    }
-    tokens.push_back(text.substr(last));
-
-    return tokens;
-}
 
 static auto parse_input() -> std::vector<std::vector<int>> {
     const std::string input_file_name{"data/day02.txt"};

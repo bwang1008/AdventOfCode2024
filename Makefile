@@ -1,5 +1,6 @@
 # Makefile style from https://codingnest.com/basic-makefiles/
 SOURCES = AdventOfCode2024/main.cpp
+SOURCES += AdventOfCode2024/utils.cpp
 SOURCES += AdventOfCode2024/day01.cpp
 SOURCES += AdventOfCode2024/day02.cpp
 SOURCES += AdventOfCode2024/day03.cpp
