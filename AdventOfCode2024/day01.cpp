@@ -30,7 +30,8 @@ static auto parse_input() -> std::pair<std::vector<int>, std::vector<int>> {
 }
 
 auto solve_day01a() -> int64_t {
-    std::pair<std::vector<int>, std::vector<int>> input_data = parse_input();
+    const std::pair<std::vector<int>, std::vector<int>> input_data =
+        parse_input();
     std::vector<int> list1 = input_data.first;
     std::vector<int> list2 = input_data.second;
 
@@ -46,7 +47,8 @@ auto solve_day01a() -> int64_t {
 }
 
 auto solve_day01b() -> int64_t {
-    std::pair<std::vector<int>, std::vector<int>> input_data = parse_input();
+    const std::pair<std::vector<int>, std::vector<int>> input_data =
+        parse_input();
     std::vector<int> list1 = input_data.first;
     std::vector<int> list2 = input_data.second;
 
