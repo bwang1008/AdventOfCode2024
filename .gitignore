@@ -1,3 +1,7 @@
+# C++ generated files from compilation
+*.d
+*.o
+
 # executables
 *.out
 
