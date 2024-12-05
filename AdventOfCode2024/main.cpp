@@ -1,25 +1,21 @@
 #include <cstdint>
 #include <iostream>
-#include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "day.hpp"
 
-auto solve(const int day, const std::string &problem_version) -> int64_t {
-    const std::map<std::pair<int, std::string>, int64_t (*)()>
-        problem_to_solver{
-            {std::pair<int, std::string>(1, "A"), &solve_day01a},
-            {std::pair<int, std::string>(1, "B"), &solve_day01b},
-            {std::pair<int, std::string>(2, "A"), &solve_day02a},
-            {std::pair<int, std::string>(2, "B"), &solve_day02b},
-            {std::pair<int, std::string>(3, "A"), &solve_day03a},
-            {std::pair<int, std::string>(3, "B"), &solve_day03b},
-        };
+auto solve(const std::size_t day, const std::string &problem_version)
+    -> int64_t {
+    const std::size_t star_index =
+        2 * (day - 1) + ((problem_version == "B") ? 1 : 0);
+    const std::vector<int64_t (*)()> problem_to_solver{
+        &solve_day01a, &solve_day01b, &solve_day02a,
+        &solve_day02b, &solve_day03a, &solve_day03b,
+    };
 
     int64_t (*const specific_solver_function)() =
-        problem_to_solver.at(std::pair<int, std::string>(day, problem_version));
+        problem_to_solver.at(star_index);
     return specific_solver_function();
 }
 
@@ -38,7 +34,12 @@ auto main(int argc, char *argv[]) -> int {
         return 1;
     }
 
-    const int64_t result = solve(std::stoi(which_day), which_problem);
+    const int day_number = std::stoi(which_day);
+    if(day_number <= 0) {
+        std::cerr << "Day number must be at least 1" << std::endl;
+        return 1;
+    }
+    const int64_t result = solve(std::size_t(day_number), which_problem);
 
     std::cout << result << std::endl;
     return 0;
