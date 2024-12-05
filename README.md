@@ -4,13 +4,13 @@ Solutions in C++, compiled using g++ 9.4.0.
 
 Compilation example:
 
-```bash
+```sh
 make
 ```
 
 Running example:
 
-```bash
+```sh
 ./solver.out 3 B
 ```
 
@@ -18,7 +18,7 @@ Run `make clean` to remove generated files from compilation.
 
 .clang-tidy generated via
 
-```bash
+```sh
 clang-tidy --dump-config --checks=*,-fuchsia-default-arguments-calls,-fuchsia-trailing-return,-llvm-header-guard -- --std=c++20 > .clang-tidy
 ```
 
@@ -30,6 +30,6 @@ Ignored checks:
 
 .clang-format generated via
 
-```bash
+```sh
 clang-format --style=llvm -dump-config > .clang-format
 ```
