@@ -63,6 +63,49 @@ auto is_valid_manual(const std::map<int, std::unordered_set<int>> &edges,
     return true;
 }
 
+auto topological_sort(const std::map<int, std::unordered_set<int>> &edges,
+                      const std::vector<int> &arr) -> std::vector<int> {
+    const std::unordered_set<int> arr_set(arr.begin(), arr.end());
+
+    std::vector<int> stack(arr.begin(), arr.end());
+    std::vector<int> processed;
+    std::unordered_set<int> have_added_children;
+    std::unordered_set<int> have_added_to_processed;
+    while(!stack.empty()) {
+        const int last = stack.back();
+
+        if(have_added_to_processed.find(last) !=
+           have_added_to_processed.end()) {
+            stack.pop_back();
+            continue;
+        }
+
+        if(have_added_children.find(last) == have_added_children.end()) {
+            // first time seeing this element, so expand
+            have_added_children.insert(last);
+            if(edges.find(last) == edges.end()) {
+                continue;
+            }
+            for(const int child : edges.at(last)) {
+                if(arr_set.find(child) != arr_set.end() &&
+                   have_added_children.find(child) ==
+                       have_added_children.end()) {
+                    stack.push_back(child);
+                }
+            }
+
+        } else {
+            // second time seeing this element
+            processed.push_back(last);
+            have_added_to_processed.insert(last);
+            stack.pop_back();
+        }
+    }
+
+    std::reverse(processed.begin(), processed.end());
+    return processed;
+}
+
 auto solve_day05a() -> int64_t {
     std::pair<std::map<int, std::unordered_set<int>>,
               std::vector<std::vector<int>>>
@@ -81,4 +124,21 @@ auto solve_day05a() -> int64_t {
     return sum_middle;
 }
 
-auto solve_day05b() -> int64_t { return 0; }
+auto solve_day05b() -> int64_t {
+    std::pair<std::map<int, std::unordered_set<int>>,
+              std::vector<std::vector<int>>>
+        input = parse_input();
+
+    const std::map<int, std::unordered_set<int>> edges = input.first;
+    const std::vector<std::vector<int>> manual_pages = input.second;
+
+    int64_t sum_middle = 0;
+    for(const std::vector<int> &pages : manual_pages) {
+        if(!is_valid_manual(edges, pages)) {
+            const std::vector<int> fixed_pages = topological_sort(edges, pages);
+            sum_middle += fixed_pages[fixed_pages.size() / 2];
+        }
+    }
+
+    return sum_middle;
+}
