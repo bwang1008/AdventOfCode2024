@@ -7,8 +7,9 @@
 
 #include "day.hpp"
 
-constexpr const char START = '^';
+constexpr const char FREE = '.';
 constexpr const char OBSTACLE = '#';
+constexpr const char START = '^';
 
 struct WalkResult {
     unsigned int num_steps;
@@ -164,4 +165,39 @@ auto solve_day06a() -> int64_t {
     return result;
 }
 
-auto solve_day06b() -> int64_t { return 0; }
+auto solve_day06b() -> int64_t {
+    std::vector<std::string> grid = parse_input();
+    const std::pair<std::size_t, std::size_t> starting_position =
+        find_start_position(grid);
+    const WalkResult initial_walk_result =
+        walk(grid, starting_position, std::pair(-1, 0));
+    const std::set<std::pair<std::size_t, std::size_t>>
+        initial_visited_positions = initial_walk_result.visited_positions;
+
+    int64_t num_positions_that_lead_to_loop = 0;
+    // try placing an obstacle at each visited location, except for starting
+    // position
+    for(const std::pair<std::size_t, std::size_t> visited_position :
+        initial_visited_positions) {
+        const std::size_t potential_row = visited_position.first;
+        const std::size_t potential_col = visited_position.second;
+        // cannot place obstacle at guard's starting position, or if there
+        // already is an obstacle
+        if(grid[potential_row][potential_col] != FREE) {
+            continue;
+        }
+
+        // replace with obstacle
+        grid[potential_row].replace(potential_col, 1, 1, OBSTACLE);
+        const WalkResult walk_result =
+            walk(grid, starting_position, std::pair(-1, 0));
+        if(walk_result.in_loop) {
+            ++num_positions_that_lead_to_loop;
+        }
+
+        // undo: replace spot with free space
+        grid[potential_row].replace(potential_col, 1, 1, FREE);
+    }
+
+    return num_positions_that_lead_to_loop;
+}
