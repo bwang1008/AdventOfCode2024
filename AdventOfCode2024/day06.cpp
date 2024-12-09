@@ -10,6 +10,15 @@
 constexpr const char START = '^';
 constexpr const char OBSTACLE = '#';
 
+struct WalkResult {
+    unsigned int num_steps;
+    std::set<std::pair<std::size_t, std::size_t>> visited_positions;
+    std::set<
+        std::pair<std::pair<std::size_t, std::size_t>, std::pair<int, int>>>
+        visited_position_with_direction;
+    bool in_loop;
+};
+
 static auto parse_input() -> std::vector<std::string> {
     const std::string input_file_name{"data/day06.txt"};
     std::ifstream input_file{input_file_name};
@@ -77,14 +86,21 @@ auto find_start_position(const std::vector<std::string> &grid)
  * or hit edge.
  */
 auto walk(const std::vector<std::string> &grid,
-          const std::pair<std::size_t, std::size_t> starting_position)
-    -> std::set<std::pair<std::size_t, std::size_t>> {
+          const std::pair<std::size_t, std::size_t> starting_position,
+          const std::pair<int, int> starting_direction) -> WalkResult {
 
-    std::set<std::pair<std::size_t, std::size_t>> visited{starting_position};
-    std::pair<int, int> direction(-1, 0);
+    unsigned int num_steps = 0;
+    std::set<std::pair<std::size_t, std::size_t>> visited_positions{
+        starting_position};
+    std::set<
+        std::pair<std::pair<std::size_t, std::size_t>, std::pair<int, int>>>
+        visited_position_with_direction{
+            std::pair(starting_position, starting_direction)};
+    bool in_loop = false;
 
     std::size_t current_row = starting_position.first;
     std::size_t current_col = starting_position.second;
+    std::pair<int, int> direction = starting_direction;
 
     while(valid_next_position(grid.size(), grid[0].size(), current_row,
                               current_col, direction)) {
@@ -94,23 +110,55 @@ auto walk(const std::vector<std::string> &grid,
             next_position(current_col, direction.second);
         if(grid[next_row][next_col] == OBSTACLE) {
             direction = turn_right(direction);
+
+            const std::pair<std::pair<std::size_t, std::size_t>,
+                            std::pair<int, int>>
+                next_position_with_direction =
+                    std::pair(std::pair(current_row, current_col), direction);
+
+            if(visited_position_with_direction.find(
+                   next_position_with_direction) !=
+               visited_position_with_direction.end()) {
+                in_loop = true;
+                break;
+            }
+            visited_position_with_direction.insert(
+                next_position_with_direction);
             continue;
         }
 
         current_row = next_row;
         current_col = next_col;
-        visited.insert(std::pair(next_row, next_col));
+        num_steps++;
+        const std::pair<std::size_t, std::size_t> current_position_after_moving(
+            current_row, current_col);
+        visited_positions.insert(current_position_after_moving);
+        const std::pair<std::pair<std::size_t, std::size_t>,
+                        std::pair<int, int>>
+            current_position_with_direction_after_moving =
+                std::pair(current_position_after_moving, direction);
+        if(visited_position_with_direction.find(
+               current_position_with_direction_after_moving) !=
+           visited_position_with_direction.end()) {
+            in_loop = true;
+            break;
+        }
+        visited_position_with_direction.insert(
+            current_position_with_direction_after_moving);
     }
 
-    return visited;
+    return WalkResult{num_steps, visited_positions,
+                      visited_position_with_direction, in_loop};
 }
 
 auto solve_day06a() -> int64_t {
     const std::vector<std::string> grid = parse_input();
     const std::pair<std::size_t, std::size_t> starting_position =
         find_start_position(grid);
+    const WalkResult walk_result =
+        walk(grid, starting_position, std::pair(-1, 0));
     const std::set<std::pair<std::size_t, std::size_t>> visited_positions =
-        walk(grid, starting_position);
+        walk_result.visited_positions;
 
     const auto result = static_cast<int64_t>(visited_positions.size());
     return result;
