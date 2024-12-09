@@ -7,6 +7,7 @@ SOURCES += AdventOfCode2024/day03.cpp
 SOURCES += AdventOfCode2024/day04.cpp
 SOURCES += AdventOfCode2024/day05.cpp
 SOURCES += AdventOfCode2024/day06.cpp
+SOURCES += AdventOfCode2024/day07.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

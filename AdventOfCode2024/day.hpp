@@ -15,5 +15,7 @@ auto solve_day05a() -> int64_t;
 auto solve_day05b() -> int64_t;
 auto solve_day06a() -> int64_t;
 auto solve_day06b() -> int64_t;
+auto solve_day07a() -> int64_t;
+auto solve_day07b() -> int64_t;
 
 #endif

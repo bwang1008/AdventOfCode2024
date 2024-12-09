@@ -13,6 +13,7 @@ auto solve(const std::size_t day, const std::string &problem_version)
         &solve_day01a, &solve_day01b, &solve_day02a, &solve_day02b,
         &solve_day03a, &solve_day03b, &solve_day04a, &solve_day04b,
         &solve_day05a, &solve_day05b, &solve_day06a, &solve_day06b,
+        &solve_day07a, &solve_day07b,
     };
 
     int64_t (*const specific_solver_function)() =
