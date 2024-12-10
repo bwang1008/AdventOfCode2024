@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <fstream>
 #include <functional> // std::function, std::multiplies, std::plus
-#include <string>     // std::stoll, std::string
+#include <string>     // std::stoll, std::string, std::to_string
 #include <utility>
 #include <vector>
 
@@ -80,4 +80,23 @@ auto solve_day07a() -> int64_t {
     return total;
 }
 
-auto solve_day07b() -> int64_t { return 0; }
+auto solve_day07b() -> int64_t {
+    const std::vector<std::pair<int64_t, std::vector<int64_t>>> equations =
+        parse_input();
+    const std::vector<std::function<int64_t(int64_t, int64_t)>> operators{
+        std::plus<>(), std::multiplies<>(),
+        [](const int64_t a, const int64_t b) -> int64_t {
+            return std::stoll(std::to_string(a) + std::to_string(b));
+        }};
+
+    int64_t total = 0;
+    for(const std::pair<int64_t, std::vector<int64_t>> &total_and_equation :
+        equations) {
+        if(match_equation(total_and_equation.second, total_and_equation.first,
+                          operators)) {
+            total += total_and_equation.first;
+        }
+    }
+
+    return total;
+}
