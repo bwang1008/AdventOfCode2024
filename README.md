@@ -1,20 +1,21 @@
 # Advent of Code 2024 Solutions
 
-Solutions in C++, compiled using g++ 9.4.0.
+Solutions in C++, compiled using g++ 9.4.0 with CMake 3.16.3 and GNU Make 4.2.1.
 
 Compilation example:
 
 ```sh
+mkdir build
+cd build
+cmake -S .. -B .
 make
 ```
 
 Running example:
 
 ```sh
-./solver.out 3 B
+./build/solver.out 3 B
 ```
-
-Run `make clean` to remove generated files from compilation.
 
 .clang-tidy generated via
 

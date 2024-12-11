@@ -1,9 +1,8 @@
-# C++ generated files from compilation
-*.d
-*.o
+# CMake build folder
+build/
 
 # executables
-*.out
+solver.out
 
-# editors
+# Vim editor
 *.swp
