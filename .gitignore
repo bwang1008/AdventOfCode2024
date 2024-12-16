@@ -4,5 +4,6 @@ build/
 # executables
 solver.out
 
-# Vim editor
+# editors
 *.swp
+.vscode/
