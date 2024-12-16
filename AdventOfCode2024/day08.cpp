@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <fstream>
+#include <numeric> // std::gcd
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -7,7 +8,6 @@
 #include <vector>
 
 #include "day.hpp"
-#include "utils.hpp"
 
 constexpr const char NON_OBSTACLE = '.';
 
@@ -120,4 +120,77 @@ auto solve_day08a() -> int64_t {
     return static_cast<int64_t>(unique_antinode_locations.size());
 }
 
-auto solve_day08b() -> int64_t { return 0; }
+auto find_antinodes_with_resonant_harmonics(
+    const std::vector<std::string> &grid,
+    const std::unordered_map<char,
+                             std::vector<std::pair<std::size_t, std::size_t>>>
+        &antenna_locations) -> std::set<std::pair<std::size_t, std::size_t>> {
+
+    std::set<std::pair<std::size_t, std::size_t>> antinode_locations;
+    for(const std::pair<const char,
+                        std::vector<std::pair<std::size_t, std::size_t>>>
+            &frequency_and_antenna_locations : antenna_locations) {
+        const std::vector<std::pair<std::size_t, std::size_t>>
+            single_frequency_antenna_locations =
+                frequency_and_antenna_locations.second;
+
+        for(std::size_t i = 0; i < single_frequency_antenna_locations.size();
+            ++i) {
+            const int antenna1_row =
+                static_cast<int>(single_frequency_antenna_locations[i].first);
+            const int antenna1_col =
+                static_cast<int>(single_frequency_antenna_locations[i].second);
+
+            for(std::size_t j = i + 1;
+                j < single_frequency_antenna_locations.size(); ++j) {
+                const int antenna2_row = static_cast<int>(
+                    single_frequency_antenna_locations[j].first);
+                const int antenna2_col = static_cast<int>(
+                    single_frequency_antenna_locations[j].second);
+
+                const int dx = antenna2_row - antenna1_row;
+                const int dy = antenna2_col - antenna1_col;
+                const int g = std::gcd(dx, dy);
+                const int drow = dx / g;
+                const int dcol = dy / g;
+
+                for(int antinode_row = antenna1_row,
+                        antinode_col = antenna1_col;
+                    0 <= antinode_row &&
+                    static_cast<std::size_t>(antinode_row) < grid.size() &&
+                    0 <= antinode_col &&
+                    static_cast<std::size_t>(antinode_col) <
+                        grid[static_cast<std::size_t>(antinode_row)].size();
+                    antinode_row += drow, antinode_col += dcol) {
+                    antinode_locations.insert(
+                        std::pair(static_cast<std::size_t>(antinode_row),
+                                  static_cast<std::size_t>(antinode_col)));
+                }
+                for(int antinode_row = antenna1_row,
+                        antinode_col = antenna1_col;
+                    0 <= antinode_row &&
+                    static_cast<std::size_t>(antinode_row) < grid.size() &&
+                    0 <= antinode_col &&
+                    static_cast<std::size_t>(antinode_col) <
+                        grid[static_cast<std::size_t>(antinode_row)].size();
+                    antinode_row -= drow, antinode_col -= dcol) {
+                    antinode_locations.insert(
+                        std::pair(static_cast<std::size_t>(antinode_row),
+                                  static_cast<std::size_t>(antinode_col)));
+                }
+            }
+        }
+    }
+
+    return antinode_locations;
+}
+
+auto solve_day08b() -> int64_t {
+    const std::vector<std::string> grid = parse_input();
+    const std::unordered_map<char,
+                             std::vector<std::pair<std::size_t, std::size_t>>>
+        antenna_locations = parse_antenna_locations(grid);
+    const std::set<std::pair<std::size_t, std::size_t>> antinode_locations =
+        find_antinodes_with_resonant_harmonics(grid, antenna_locations);
+    return static_cast<int64_t>(antinode_locations.size());
+}
