@@ -42,12 +42,12 @@ auto blink_at_stone(const int64_t stone) -> std::vector<int64_t> {
     return std::vector<int64_t>{stone * STONE_MULTIPLIER};
 }
 
-auto blink_at_stones(const std::unordered_map<int64_t, int> &initial_stones)
-    -> std::unordered_map<int64_t, int> {
-    std::unordered_map<int64_t, int> after;
+auto blink_at_stones(const std::unordered_map<int64_t, int64_t> &initial_stones)
+    -> std::unordered_map<int64_t, int64_t> {
+    std::unordered_map<int64_t, int64_t> after;
     for(const auto stone_nums_and_counts : initial_stones) {
         const int64_t stone_value = stone_nums_and_counts.first;
-        const int stone_count = stone_nums_and_counts.second;
+        const int64_t stone_count = stone_nums_and_counts.second;
         const std::vector<int64_t> blinked_stone = blink_at_stone(stone_value);
         for(const int64_t post_stone : blinked_stone) {
             after[post_stone] += stone_count;
@@ -59,7 +59,7 @@ auto blink_at_stones(const std::unordered_map<int64_t, int> &initial_stones)
 
 auto blink_at_stones_many_times(const std::vector<int64_t> &stones,
                                 const int num_times_to_blink) -> int64_t {
-    std::unordered_map<int64_t, int> stone_value_to_count;
+    std::unordered_map<int64_t, int64_t> stone_value_to_count;
     for(const int64_t stone : stones) {
         stone_value_to_count[stone]++;
     }
@@ -82,6 +82,7 @@ auto solve_day11a() -> int64_t {
 }
 
 auto solve_day11b() -> int64_t {
-    const int64_t result = 0;
-    return result;
+    constexpr const int NUM_TIMES_TO_BLINK = 75;
+    const std::vector<int64_t> stones = parse_input();
+    return blink_at_stones_many_times(stones, NUM_TIMES_TO_BLINK);
 }
