@@ -24,37 +24,33 @@ static auto parse_input() -> std::vector<int64_t> {
     return stone_values;
 }
 
-auto blink_at_stone(const int64_t stone) -> std::vector<int64_t> {
-    constexpr const int STONE_MULTIPLIER = 2024;
-    if(stone == 0) {
-        return std::vector<int64_t>{1};
-    }
-
-    const std::string stone_rep = std::to_string(stone);
-    if(stone_rep.size() % 2 == 0) {
-        const int64_t left_stone =
-            std::stoll(stone_rep.substr(0, stone_rep.size() / 2));
-        const int64_t right_stone =
-            std::stoll(stone_rep.substr(stone_rep.size() / 2));
-        return std::vector<int64_t>{left_stone, right_stone};
-    }
-
-    return std::vector<int64_t>{stone * STONE_MULTIPLIER};
-}
-
 auto blink_at_stones(const std::unordered_map<int64_t, int64_t> &initial_stones)
     -> std::unordered_map<int64_t, int64_t> {
-    std::unordered_map<int64_t, int64_t> after;
-    for(const auto stone_nums_and_counts : initial_stones) {
-        const int64_t stone_value = stone_nums_and_counts.first;
-        const int64_t stone_count = stone_nums_and_counts.second;
-        const std::vector<int64_t> blinked_stone = blink_at_stone(stone_value);
-        for(const int64_t post_stone : blinked_stone) {
-            after[post_stone] += stone_count;
+    constexpr const int STONE_MULTIPLIER = 2024;
+    std::unordered_map<int64_t, int64_t> next_stones;
+
+    for(const auto prior_value_and_count : initial_stones) {
+        const int64_t value = prior_value_and_count.first;
+        const int64_t count = prior_value_and_count.second;
+        if(value == 0) {
+            next_stones[1] += count;
+            continue;
+        }
+
+        const std::string stone_rep = std::to_string(value);
+        if(stone_rep.size() % 2 == 0) {
+            const int64_t left_stone =
+                std::stoll(stone_rep.substr(0, stone_rep.size() / 2));
+            const int64_t right_stone =
+                std::stoll(stone_rep.substr(stone_rep.size() / 2));
+            next_stones[left_stone] += count;
+            next_stones[right_stone] += count;
+        } else {
+            next_stones[value * STONE_MULTIPLIER] += count;
         }
     }
 
-    return after;
+    return next_stones;
 }
 
 auto blink_at_stones_many_times(const std::vector<int64_t> &stones,
