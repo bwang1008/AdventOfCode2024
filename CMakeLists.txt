@@ -24,6 +24,7 @@ ADD_EXECUTABLE(
 	AdventOfCode2024/day09.cpp
 	AdventOfCode2024/day10.cpp
 	AdventOfCode2024/day11.cpp
+	AdventOfCode2024/day12.cpp
 	AdventOfCode2024/main.cpp
 	AdventOfCode2024/utils.cpp
 	AdventOfCode2024/utils.hpp
