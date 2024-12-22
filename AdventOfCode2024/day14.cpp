@@ -181,7 +181,7 @@ auto solve_day14a() -> int64_t {
 
 auto solve_day14b() -> int64_t {
     constexpr const int VERIFIED_SECONDS = 0;
-    constexpr const int MAX_SECONDS_TO_TRY = 30000;
+    constexpr const int MAX_SECONDS_TO_TRY = BATHROOM_HEIGHT * BATHROOM_WIDTH;
     constexpr const double NEIGHBOR_TOLERANCE = 0.7;
     constexpr const int LOGGING_FREQUENCY = 200;
 
