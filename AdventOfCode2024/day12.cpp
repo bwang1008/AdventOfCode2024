@@ -92,16 +92,26 @@ auto partition_grid(const std::vector<std::string> &grid)
     return grid_region_ids;
 }
 
-auto find_area_and_perimeter(
-    const std::vector<std::vector<int>> &grid_region_ids)
-    -> std::pair<std::unordered_map<int, int>, std::unordered_map<int, int>> {
+auto find_area(const std::vector<std::vector<int>> &grid_region_ids)
+    -> std::unordered_map<int, int> {
     std::unordered_map<int, int> region_id_to_area;
+
+    for(const auto &row : grid_region_ids) {
+        for(const auto region_id : row) {
+            region_id_to_area[region_id]++;
+        }
+    }
+
+    return region_id_to_area;
+}
+
+auto find_perimeter(const std::vector<std::vector<int>> &grid_region_ids)
+    -> std::unordered_map<int, int> {
     std::unordered_map<int, int> region_id_to_perimeter;
 
     for(std::size_t i = 0; i < grid_region_ids.size(); ++i) {
         for(std::size_t j = 0; j < grid_region_ids[i].size(); ++j) {
             const int region_id = grid_region_ids[i][j];
-            region_id_to_area[region_id]++;
 
             int perimeter_length_to_add = 4;
             if(0 < i && grid_region_ids[i - 1][j] == region_id) {
@@ -114,7 +124,79 @@ auto find_area_and_perimeter(
         }
     }
 
-    return std::pair(region_id_to_area, region_id_to_perimeter);
+    return region_id_to_perimeter;
+}
+
+auto find_number_of_edges(const std::vector<std::vector<int>> &grid_region_ids)
+    -> std::unordered_map<int, int> {
+    std::unordered_map<int, int> region_id_to_edges;
+
+    for(std::size_t i = 0; i < grid_region_ids.size(); ++i) {
+        for(std::size_t j = 0; j < grid_region_ids[i].size(); ++j) {
+            const int region_id = grid_region_ids[i][j];
+
+            bool exists_top_left =
+                (0 < i && 0 < j && grid_region_ids[i - 1][j - 1] == region_id);
+            bool exists_top = (0 < i && grid_region_ids[i - 1][j] == region_id);
+            bool exists_left =
+                (0 < j && grid_region_ids[i][j - 1] == region_id);
+            bool exists_top_right =
+                (0 < i && j + 1 < grid_region_ids[i - 1].size() &&
+                 grid_region_ids[i - 1][j + 1] == region_id);
+
+            int perimeter_length_to_add = 0;
+
+            if(exists_top_left) {
+                if(exists_top) {
+                    if(exists_top_right) {
+                        if(exists_left) {
+                            perimeter_length_to_add = 0;
+                        } else {
+                            perimeter_length_to_add = 4;
+                        }
+                    } else {
+                        if(exists_left) {
+                            perimeter_length_to_add = -2;
+                        } else {
+                            perimeter_length_to_add = 2;
+                        }
+                    }
+                } else {
+                    if(exists_left) {
+                        perimeter_length_to_add = 2;
+                    } else {
+                        perimeter_length_to_add = 4;
+                    }
+                }
+            } else {
+                if(exists_top) {
+                    if(exists_top_right) {
+                        if(exists_left) {
+                            perimeter_length_to_add = 0;
+                        } else {
+                            perimeter_length_to_add = 2;
+                        }
+                    } else {
+                        if(exists_left) {
+                            perimeter_length_to_add = -2;
+                        } else {
+                            perimeter_length_to_add = 0;
+                        }
+                    }
+                } else {
+                    if(exists_left) {
+                        perimeter_length_to_add = 0;
+                    } else {
+                        perimeter_length_to_add = 4;
+                    }
+                }
+            }
+
+            region_id_to_edges[region_id] += perimeter_length_to_add;
+        }
+    }
+
+    return region_id_to_edges;
 }
 
 auto find_total_fencing_price(
@@ -134,18 +216,21 @@ auto find_total_fencing_price(
 auto solve_day12a() -> int64_t {
     const std::vector<std::string> grid = parse_input();
     const std::vector<std::vector<int>> grid_region_ids = partition_grid(grid);
-    const std::pair<std::unordered_map<int, int>, std::unordered_map<int, int>>
-        region_id_to_area_and_perimeter =
-            find_area_and_perimeter(grid_region_ids);
     const std::unordered_map<int, int> region_id_to_area =
-        region_id_to_area_and_perimeter.first;
+        find_area(grid_region_ids);
     const std::unordered_map<int, int> region_id_to_perimeter =
-        region_id_to_area_and_perimeter.second;
+        find_perimeter(grid_region_ids);
 
     return find_total_fencing_price(region_id_to_area, region_id_to_perimeter);
 }
 
 auto solve_day12b() -> int64_t {
-    const int result = 0;
-    return result;
+    const std::vector<std::string> grid = parse_input();
+    const std::vector<std::vector<int>> grid_region_ids = partition_grid(grid);
+    const std::unordered_map<int, int> region_id_to_area =
+        find_area(grid_region_ids);
+    const std::unordered_map<int, int> region_id_to_edges =
+        find_number_of_edges(grid_region_ids);
+
+    return find_total_fencing_price(region_id_to_area, region_id_to_edges);
 }
