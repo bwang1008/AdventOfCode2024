@@ -16,6 +16,8 @@ constexpr char BOX_SYMBOL = 'O';
 constexpr char ROBOT_SYMBOL = '@';
 constexpr char WALL_SYMBOL = '#';
 constexpr char EMPTY_SYMBOL = '.';
+constexpr char LEFT_BOX_SYMBOL = '[';
+constexpr char RIGHT_BOX_SYMBOL = ']';
 
 static auto parse_input()
     -> std::pair<std::vector<std::vector<char>>, std::string> {
@@ -42,6 +44,32 @@ static auto parse_input()
 
     return std::pair<std::vector<std::vector<char>>, std::string>(
         board, attempted_moves);
+}
+
+auto widen_input(const std::vector<std::vector<char>> &board)
+    -> std::vector<std::vector<char>> {
+    std::vector<std::vector<char>> new_board;
+    for(const std::vector<char> &vec : board) {
+        std::vector<char> wider_line;
+        for(const char c : vec) {
+            if(c == WALL_SYMBOL) {
+                wider_line.push_back(WALL_SYMBOL);
+                wider_line.push_back(WALL_SYMBOL);
+            } else if(c == BOX_SYMBOL) {
+                wider_line.push_back(LEFT_BOX_SYMBOL);
+                wider_line.push_back(RIGHT_BOX_SYMBOL);
+            } else if(c == EMPTY_SYMBOL) {
+                wider_line.push_back(EMPTY_SYMBOL);
+                wider_line.push_back(EMPTY_SYMBOL);
+            } else if(c == ROBOT_SYMBOL) {
+                wider_line.push_back(ROBOT_SYMBOL);
+                wider_line.push_back(EMPTY_SYMBOL);
+            }
+        }
+        new_board.push_back(wider_line);
+    }
+
+    return new_board;
 }
 
 class Warehouse {
@@ -106,6 +134,29 @@ class Warehouse {
                             proposed_next_space.second)] == BOX_SYMBOL) {
                     next_affected_spaces_to_check_neighbors_of.emplace(
                         proposed_next_space.first, proposed_next_space.second);
+                }
+                if(board[static_cast<std::size_t>(proposed_next_space.first)]
+                        [static_cast<std::size_t>(
+                            proposed_next_space.second)] == LEFT_BOX_SYMBOL) {
+                    next_affected_spaces_to_check_neighbors_of.emplace(
+                        proposed_next_space.first, proposed_next_space.second);
+
+                    if(direction.second == 0) {
+                        next_affected_spaces_to_check_neighbors_of.emplace(
+                            proposed_next_space.first,
+                            proposed_next_space.second + 1);
+                    }
+                }
+                if(board[static_cast<std::size_t>(proposed_next_space.first)]
+                        [static_cast<std::size_t>(
+                            proposed_next_space.second)] == RIGHT_BOX_SYMBOL) {
+                    next_affected_spaces_to_check_neighbors_of.emplace(
+                        proposed_next_space.first, proposed_next_space.second);
+                    if(direction.second == 0) {
+                        next_affected_spaces_to_check_neighbors_of.emplace(
+                            proposed_next_space.first,
+                            proposed_next_space.second - 1);
+                    }
                 }
             }
 
@@ -181,7 +232,8 @@ class Warehouse {
         int64_t total_sum_of_goods_position_system_coordinate_of_all_boxes = 0;
         for(std::size_t i = 0; i < board.size(); ++i) {
             for(std::size_t j = 0; j < board[i].size(); ++j) {
-                if(board[i][j] == BOX_SYMBOL) {
+                if(board[i][j] == BOX_SYMBOL ||
+                   board[i][j] == LEFT_BOX_SYMBOL) {
                     total_sum_of_goods_position_system_coordinate_of_all_boxes +=
                         compute_goods_position_system_coordinate(i, j);
                 }
@@ -212,4 +264,13 @@ auto solve_day15a() -> int64_t {
     return warehouse.compute_total_sum_of_goods_position_system_of_all_boxes();
 }
 
-auto solve_day15b() -> int64_t { return 0; }
+auto solve_day15b() -> int64_t {
+    const std::pair<std::vector<std::vector<char>>, std::string> parsed_input =
+        Day15::parse_input();
+    const std::vector<std::vector<char>> wider_board =
+        Day15::widen_input(parsed_input.first);
+    const std::string proposed_movements = parsed_input.second;
+    Day15::Warehouse warehouse(wider_board);
+    warehouse.run_proposed_movements(parsed_input.second);
+    return warehouse.compute_total_sum_of_goods_position_system_of_all_boxes();
+}
