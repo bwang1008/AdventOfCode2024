@@ -7,7 +7,7 @@ Compilation example:
 ```sh
 mkdir build
 cd build
-cmake -S .. -B .
+cmake -S .. -B . -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug
 make
 ```
 
