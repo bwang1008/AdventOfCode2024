@@ -1,12 +1,11 @@
-#include <algorithm> // std::min
+#include <algorithm> // std::min, std::replace
 #include <cstdint>   // std::size_t, int64_t
 #include <fstream>   // std::ifstream
-#include <iostream>
-#include <list>
+#include <limits>    // std::numeric_limits
 #include <map>
+#include <queue> // std::priority_queue
 #include <set>
-#include <stdexcept> // std::runtime_error
-#include <string>
+#include <tuple>   // std::get
 #include <utility> // std::pair
 #include <vector>
 
@@ -18,227 +17,214 @@ constexpr char START_SYMBOL = 'S';
 constexpr char END_SYMBOL = 'E';
 constexpr char WALL_SYMBOL = '#';
 constexpr char EMPTY_SYMBOL = '.';
-constexpr int64_t NUMBER_OF_DIFFERENT_ROTATIONS = 4;
+constexpr int64_t NUMBER_OF_DIFFERENT_DIRECTIONS = 4;
 constexpr int64_t SCORE_PER_ROTATION = 1000;
+constexpr int64_t SCORE_PER_STEP = 1;
 
-static auto parse_input() -> std::vector<std::vector<char>> {
-    const std::string input_file_name{"data/day16.txt"};
+enum Direction : std::size_t { EAST = 0, NORTH = 1, WEST = 2, SOUTH = 3 };
+
+static auto parse_input() -> std::tuple<std::vector<std::vector<char>>,
+                                        std::pair<std::size_t, std::size_t>,
+                                        std::pair<std::size_t, std::size_t>> {
+    const std::string input_file_name = "data/day16.txt";
     std::ifstream input_file{input_file_name};
 
     std::vector<std::vector<char>> board;
+    std::pair<std::size_t, std::size_t> start_location(0, 0);
+    std::pair<std::size_t, std::size_t> end_location(0, 0);
+
+    std::size_t row = 0;
     std::string line;
 
     while(std::getline(input_file, line)) {
+        for(std::size_t col = 0; col < line.size(); ++col) {
+            if(line[col] == START_SYMBOL) {
+                start_location = std::pair<std::size_t, std::size_t>(row, col);
+            } else if(line[col] == END_SYMBOL) {
+                end_location = std::pair<std::size_t, std::size_t>(row, col);
+            }
+        }
+        std::replace(line.begin(), line.end(), START_SYMBOL, EMPTY_SYMBOL);
+        std::replace(line.begin(), line.end(), END_SYMBOL, EMPTY_SYMBOL);
         board.emplace_back(line.begin(), line.end());
+        ++row;
     }
 
-    return board;
+    return std::tuple<std::vector<std::vector<char>>,
+                      std::pair<std::size_t, std::size_t>,
+                      std::pair<std::size_t, std::size_t>>(
+        board, start_location, end_location);
 }
 
-auto is_perpendicular(const std::pair<int, int> direction1,
-                      const std::pair<int, int> direction2) -> bool {
-    return (direction1.first * direction2.first +
-            direction1.second * direction2.second) == 0;
+auto parts_to_index(const std::size_t row, const std::size_t col,
+                    const Direction direction, const std::size_t max_cols)
+    -> std::size_t {
+    return NUMBER_OF_DIFFERENT_DIRECTIONS * (max_cols * row + col) +
+           static_cast<std::size_t>(direction);
 }
 
-class State {
-  public:
-    State(const std::size_t row_, const std::size_t col_,
-          const std::pair<int, int> direction_)
-        : row(row_), col(col_), direction(direction_) {}
-
-    [[nodiscard]] auto get_row() const -> std::size_t { return row; }
-
-    [[nodiscard]] auto get_col() const -> std::size_t { return col; }
-
-    [[nodiscard]] auto get_direction() const -> std::pair<int, int> {
-        return direction;
-    }
-
-    [[nodiscard]] auto to_string() const -> std::string {
-        return "(" + std::to_string(row) + ", " + std::to_string(col) + ", <" +
-               std::to_string(direction.first) + ", " +
-               std::to_string(direction.second) + ">)";
-    }
-
-    auto operator<(const State &other) const -> bool {
-        if(row != other.row) {
-            return row < other.row;
-        }
-        if(col != other.col) {
-            return col < other.col;
-        }
-        if(direction.first != other.direction.first) {
-            return direction.first < other.direction.first;
-        }
-        return direction.second < other.direction.second;
-        ;
-    }
-
-    [[nodiscard]] auto
-    get_potential_neighbors(const std::size_t num_board_rows,
-                            const std::size_t num_board_cols) const
-        -> std::vector<std::pair<State, int64_t>> {
-        std::vector<std::pair<State, int64_t>> potential_neighbors;
-        if(row > 0 && direction == std::pair<int, int>(-1, 0)) {
-            potential_neighbors.emplace_back(State(row - 1, col, direction), 1);
-        }
-        if(row + 1 < num_board_rows && direction == std::pair<int, int>(1, 0)) {
-            potential_neighbors.emplace_back(State(row + 1, col, direction), 1);
-        }
-        if(col > 0 && direction == std::pair<int, int>(0, -1)) {
-            potential_neighbors.emplace_back(State(row, col - 1, direction), 1);
-        }
-        if(col + 1 < num_board_cols && direction == std::pair<int, int>(0, 1)) {
-            potential_neighbors.emplace_back(State(row, col + 1, direction), 1);
-        }
-        const std::vector<std::pair<int, int>> all_directions = {
-            {0, 1}, {1, 0}, {0, -1}, {-1, 0}};
-        for(const std::pair<int, int> potential_direction : all_directions) {
-            if(is_perpendicular(potential_direction, direction)) {
-                potential_neighbors.emplace_back(
-                    State(row, col, potential_direction), SCORE_PER_ROTATION);
-            }
-        }
-
-        return potential_neighbors;
-    }
-
-  private:
-    std::size_t row;
-    std::size_t col;
-    std::pair<int, int> direction;
-};
-
-auto find_symbol(const std::vector<std::vector<char>> &board, const char symbol)
-    -> std::pair<std::size_t, std::size_t> {
-    for(std::size_t i = 0; i < board.size(); ++i) {
-        for(std::size_t j = 0; j < board[i].size(); ++j) {
-            if(board[i][j] == symbol) {
-                return std::pair<std::size_t, std::size_t>(i, j);
-            }
-        }
-    }
-
-    const std::string error_message =
-        "Did not find " + std::string(1, symbol) + " in board";
-    throw std::invalid_argument(error_message);
+auto index_to_parts(const std::size_t index, const std::size_t max_cols)
+    -> std::pair<std::pair<std::size_t, std::size_t>, Direction> {
+    const auto direction =
+        static_cast<Direction>(index % NUMBER_OF_DIFFERENT_DIRECTIONS);
+    const std::size_t row = (index / NUMBER_OF_DIFFERENT_DIRECTIONS) / max_cols;
+    const std::size_t col = (index / NUMBER_OF_DIFFERENT_DIRECTIONS) % max_cols;
+    return std::pair<std::pair<std::size_t, std::size_t>, Direction>(
+        std::pair<std::size_t, std::size_t>(row, col), direction);
 }
 
-auto compute_impossible_score(const std::size_t num_board_rows,
-                              const std::size_t num_board_cols) -> int64_t {
-    return 1 + (NUMBER_OF_DIFFERENT_ROTATIONS * SCORE_PER_ROTATION + 1) *
-                   static_cast<int64_t>(num_board_rows) *
-                   static_cast<int64_t>(num_board_cols);
+auto find_neighbors(const std::vector<std::vector<char>> &board,
+                    const std::size_t row, const std::size_t col,
+                    const Direction direction)
+    -> std::vector<std::pair<std::pair<std::size_t, std::size_t>, Direction>> {
+    const std::map<Direction, std::pair<int, int>> direction_to_deltas = {
+        {Direction::EAST, std::pair<int, int>(0, 1)},
+        {Direction::NORTH, std::pair<int, int>(-1, 0)},
+        {Direction::WEST, std::pair<int, int>(0, -1)},
+        {Direction::SOUTH, std::pair<int, int>(1, 0)},
+    };
+
+    std::vector<std::pair<std::pair<std::size_t, std::size_t>, Direction>>
+        neighbors;
+
+    // moving forward
+    const int next_row =
+        static_cast<int>(next_row) + direction_to_deltas.at(direction).first;
+    const int next_col =
+        static_cast<int>(next_col) + direction_to_deltas.at(direction).second;
+    if(0 <= next_row && next_row < board.size() && 0 <= next_col &&
+       next_col < board[static_cast<std::size_t>(next_row)].size()) {
+        const auto actual_next_row = static_cast<std::size_t>(next_row);
+        const auto actual_next_col = static_cast<std::size_t>(next_col);
+        if(board[actual_next_row][actual_next_col] == EMPTY_SYMBOL) {
+            neighbors.emplace_back(std::pair<std::size_t, std::size_t>(
+                                       actual_next_row, actual_next_col),
+                                   direction);
+        }
+    }
+
+    // check other 3 directions
+    for(const auto &direction_to_delta : direction_to_deltas) {
+        const Direction next_direction = direction_to_delta.first;
+        // only move if it is perpendicular
+        if((static_cast<std::size_t>(direction) -
+            static_cast<std::size_t>(next_direction)) %
+               2 !=
+           0) {
+            neighbors.emplace_back(
+                std::pair<std::size_t, std::size_t>(row, col), next_direction);
+        }
+    }
+
+    return neighbors;
 }
 
-auto find_min_score_of_all_positions(
-    const std::vector<std::vector<char>> &board) -> std::map<State, int64_t> {
-    const int64_t impossible_score =
-        compute_impossible_score(board.size(), board[0].size());
+auto dijkstra(const std::vector<std::vector<char>> &board,
+              const std::size_t start_index)
+    -> std::map<std::size_t, std::size_t> {
+    std::set<std::size_t> visited;
+    std::map<std::size_t, std::size_t> distances;
+    distances[start_index] = 0;
 
-    const std::pair<std::size_t, std::size_t> starting_position =
-        find_symbol(board, START_SYMBOL);
-    const State initial_state(starting_position.first, starting_position.second,
-                              std::pair<int, int>(0, 1));
-    std::map<State, int64_t> score_board;
-    score_board[initial_state] = 0;
+    std::priority_queue<std::pair<std::size_t, std::size_t>> pq;
+    pq.push(std::pair<std::size_t, std::size_t>(0, start_index));
 
-    std::set<State> visited;
-    std::list<State> states_to_consider;
-    states_to_consider.push_back(initial_state);
+    while(!pq.empty()) {
+        const std::pair<std::size_t, std::size_t> node = pq.top();
+        pq.pop();
+        const std::size_t current_distance = node.first;
+        const std::size_t index = node.second;
 
-    while(!states_to_consider.empty()) {
-        // get state with min score
-        auto min_cost_iterator = states_to_consider.begin();
-        int64_t min_cost_so_far = impossible_score;
-        if(score_board.find(*min_cost_iterator) != score_board.end()) {
-            min_cost_so_far = score_board[*min_cost_iterator];
-        }
-        for(auto it = states_to_consider.begin();
-            it != states_to_consider.end(); ++it) {
-            if(score_board.find(*it) != score_board.end()) {
-                const int64_t cost_to_consider = score_board[*it];
-                if(cost_to_consider < min_cost_so_far) {
-                    min_cost_iterator = it;
-                    min_cost_so_far = cost_to_consider;
-                }
-            }
-        }
-
-        const State current_state = *min_cost_iterator;
-        states_to_consider.erase(min_cost_iterator);
-
-        if(visited.find(current_state) != visited.end()) {
+        if(visited.find(index) != visited.end()) {
             continue;
         }
-        visited.insert(current_state);
+        visited.insert(index);
 
-        const std::vector<std::pair<State, int64_t>> potential_neighbors =
-            current_state.get_potential_neighbors(board.size(),
-                                                  board[0].size());
-        for(const std::pair<State, int64_t> potential_next_state_and_cost :
-            potential_neighbors) {
-            const State potential_neighbor =
-                potential_next_state_and_cost.first;
-            const int64_t cost_of_moving_to_this_next_state =
-                potential_next_state_and_cost.second;
-            if(score_board.find(potential_neighbor) == score_board.end()) {
-                score_board[potential_neighbor] = impossible_score;
+        const std::pair<std::pair<std::size_t, std::size_t>, Direction> parts =
+            index_to_parts(index, board[0].size());
+        const std::size_t row = parts.first.first;
+        const std::size_t col = parts.first.second;
+        const Direction direction = parts.second;
+
+        const std::vector<
+            std::pair<std::pair<std::size_t, std::size_t>, Direction>>
+            neighbors = find_neighbors(board, row, col, direction);
+        for(const std::pair<std::pair<std::size_t, std::size_t>, Direction>
+                neighbor_parts : neighbors) {
+            const std::size_t next_row = neighbor_parts.first.first;
+            const std::size_t next_col = neighbor_parts.first.second;
+            const Direction next_direction = neighbor_parts.second;
+            const std::size_t next_index = parts_to_index(
+                next_row, next_col, next_direction, board[0].size());
+            if(visited.find(next_index) != visited.end()) {
+                continue;
             }
 
-            const char existing_symbol = board[potential_neighbor.get_row()]
-                                              [potential_neighbor.get_col()];
-            if(existing_symbol != WALL_SYMBOL &&
-               visited.find(potential_neighbor) == visited.end()) {
-                score_board[potential_neighbor] =
-                    std::min(score_board[current_state] +
-                                 cost_of_moving_to_this_next_state,
-                             score_board[potential_neighbor]);
-                states_to_consider.push_back(potential_neighbor);
+            if(distances.find(next_index) == distances.end()) {
+                distances[next_index] = std::numeric_limits<std::size_t>::max();
             }
+            const std::size_t next_cost = (direction == next_direction)
+                                              ? SCORE_PER_STEP
+                                              : SCORE_PER_ROTATION;
+            distances[next_index] =
+                std::min(current_distance + next_cost, distances[next_index]);
+            pq.push(std::pair<std::size_t, std::size_t>(distances[next_index],
+                                                        next_index));
         }
     }
 
-    return score_board;
+    return distances;
 }
 
-auto find_min_score_of_end_state(const std::vector<std::vector<char>> &board)
+auto find_min_score(const std::vector<std::vector<char>> &board,
+                    const std::pair<std::size_t, std::size_t> start_location,
+                    const std::pair<std::size_t, std::size_t> end_location)
     -> int64_t {
-    const int64_t impossible_score =
-        compute_impossible_score(board.size(), board[0].size());
-    const std::map<State, int64_t> score_board =
-        find_min_score_of_all_positions(board);
-    const std::pair<std::size_t, std::size_t> end_position =
-        find_symbol(board, END_SYMBOL);
-    const State final_state1 = State(end_position.first, end_position.second,
-                                     std::pair<int, int>(0, 1));
-    const State final_state2 = State(end_position.first, end_position.second,
-                                     std::pair<int, int>(1, 0));
-    const State final_state3 = State(end_position.first, end_position.second,
-                                     std::pair<int, int>(0, -1));
-    const State final_state4 = State(end_position.first, end_position.second,
-                                     std::pair<int, int>(-1, 0));
-    const std::vector<State> possible_final_states{final_state1, final_state2,
-                                                   final_state3, final_state4};
+    const std::size_t start_index =
+        parts_to_index(start_location.first, start_location.second,
+                       Direction::EAST, board[0].size());
+    const std::size_t end_index_east =
+        parts_to_index(end_location.first, end_location.second, Direction::EAST,
+                       board[0].size());
+    const std::size_t end_index_north =
+        parts_to_index(end_location.first, end_location.second,
+                       Direction::NORTH, board[0].size());
+    const std::size_t end_index_west =
+        parts_to_index(end_location.first, end_location.second, Direction::WEST,
+                       board[0].size());
+    const std::size_t end_index_south =
+        parts_to_index(end_location.first, end_location.second,
+                       Direction::SOUTH, board[0].size());
+    const std::vector<std::size_t> possible_end_indexes{
+        end_index_east, end_index_north, end_index_west, end_index_south};
 
-    int64_t end_score = impossible_score;
-    for(const State possible_final_state : possible_final_states) {
-        if(score_board.find(possible_final_state) != score_board.end()) {
-            const int64_t possible_final_score =
-                score_board.at(possible_final_state);
-            end_score = std::min(possible_final_score, end_score);
+    const std::map<std::size_t, std::size_t> distances =
+        dijkstra(board, start_index);
+
+    std::size_t best_distance_at_end = std::numeric_limits<std::size_t>::max();
+    for(const std::size_t possible_end_index : possible_end_indexes) {
+        if(distances.find(possible_end_index) != distances.end()) {
+            best_distance_at_end = std::min(distances.at(possible_end_index),
+                                            best_distance_at_end);
         }
     }
 
-    return end_score;
+    return static_cast<int64_t>(best_distance_at_end);
 }
 
 } // namespace Day16
 
 auto solve_day16a() -> int64_t {
-    const std::vector<std::vector<char>> board = Day16::parse_input();
-    return Day16::find_min_score_of_end_state(board);
+    const std::tuple<std::vector<std::vector<char>>,
+                     std::pair<std::size_t, std::size_t>,
+                     std::pair<std::size_t, std::size_t>>
+        inputs = Day16::parse_input();
+    const std::vector<std::vector<char>> &board = std::get<0>(inputs);
+    const std::pair<std::size_t, std::size_t> start_location =
+        std::get<1>(inputs);
+    const std::pair<std::size_t, std::size_t> end_location =
+        std::get<2>(inputs);
+    return Day16::find_min_score(board, start_location, end_location);
 }
 
 auto solve_day16b() -> int64_t { return 0; }
