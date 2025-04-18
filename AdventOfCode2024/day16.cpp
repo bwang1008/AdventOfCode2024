@@ -1,7 +1,8 @@
-#include <algorithm> // std::min, std::replace
-#include <cstdint>   // std::size_t, int64_t
-#include <fstream>   // std::ifstream
-#include <limits>    // std::numeric_limits
+#include <algorithm>  // std::min, std::replace
+#include <cstdint>    // std::size_t, int64_t
+#include <fstream>    // std::ifstream
+#include <functional> // std::greater
+#include <limits>     // std::numeric_limits
 #include <map>
 #include <queue> // std::priority_queue
 #include <set>
@@ -89,11 +90,13 @@ auto find_neighbors(const std::vector<std::vector<char>> &board,
 
     // moving forward
     const int next_row =
-        static_cast<int>(next_row) + direction_to_deltas.at(direction).first;
+        static_cast<int>(row) + direction_to_deltas.at(direction).first;
     const int next_col =
-        static_cast<int>(next_col) + direction_to_deltas.at(direction).second;
-    if(0 <= next_row && next_row < board.size() && 0 <= next_col &&
-       next_col < board[static_cast<std::size_t>(next_row)].size()) {
+        static_cast<int>(col) + direction_to_deltas.at(direction).second;
+    if(0 <= next_row && static_cast<std::size_t>(next_row) < board.size() &&
+       0 <= next_col &&
+       static_cast<std::size_t>(next_col) <
+           board[static_cast<std::size_t>(next_row)].size()) {
         const auto actual_next_row = static_cast<std::size_t>(next_row);
         const auto actual_next_col = static_cast<std::size_t>(next_col);
         if(board[actual_next_row][actual_next_col] == EMPTY_SYMBOL) {
@@ -126,7 +129,10 @@ auto dijkstra(const std::vector<std::vector<char>> &board,
     std::map<std::size_t, std::size_t> distances;
     distances[start_index] = 0;
 
-    std::priority_queue<std::pair<std::size_t, std::size_t>> pq;
+    std::priority_queue<std::pair<std::size_t, std::size_t>,
+                        std::vector<std::pair<std::size_t, std::size_t>>,
+                        std::greater<>>
+        pq;
     pq.push(std::pair<std::size_t, std::size_t>(0, start_index));
 
     while(!pq.empty()) {
