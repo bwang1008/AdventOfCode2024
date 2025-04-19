@@ -218,6 +218,122 @@ auto find_min_score(const std::vector<std::vector<char>> &board,
     return static_cast<int64_t>(best_distance_at_end);
 }
 
+auto find_num_tiles(const std::vector<std::vector<char>> &board,
+                    const std::pair<std::size_t, std::size_t> start_location,
+                    const std::pair<std::size_t, std::size_t> end_location)
+    -> int64_t {
+    const std::size_t start_index =
+        parts_to_index(start_location.first, start_location.second,
+                       Direction::EAST, board[0].size());
+    const std::size_t end_index_east =
+        parts_to_index(end_location.first, end_location.second, Direction::EAST,
+                       board[0].size());
+    const std::size_t end_index_north =
+        parts_to_index(end_location.first, end_location.second,
+                       Direction::NORTH, board[0].size());
+    const std::size_t end_index_west =
+        parts_to_index(end_location.first, end_location.second, Direction::WEST,
+                       board[0].size());
+    const std::size_t end_index_south =
+        parts_to_index(end_location.first, end_location.second,
+                       Direction::SOUTH, board[0].size());
+    const std::vector<std::size_t> possible_end_indexes{
+        end_index_east, end_index_north, end_index_west, end_index_south};
+
+    const std::map<std::size_t, std::size_t> distances =
+        dijkstra(board, start_index);
+
+    std::size_t best_distance_at_end = std::numeric_limits<std::size_t>::max();
+    for(const std::size_t possible_end_index : possible_end_indexes) {
+        if(distances.find(possible_end_index) != distances.end()) {
+            best_distance_at_end = std::min(distances.at(possible_end_index),
+                                            best_distance_at_end);
+        }
+    }
+
+    const std::map<Direction, Direction> opposite_direction{
+        {Direction::EAST, Direction::WEST},
+        {Direction::NORTH, Direction::SOUTH},
+        {Direction::WEST, Direction::EAST},
+        {Direction::SOUTH, Direction::NORTH}};
+
+    std::set<std::size_t> visited;
+    std::set<std::pair<std::size_t, std::size_t>> distinct_positions;
+    std::queue<std::size_t> q;
+    for(const std::size_t possible_end_index : possible_end_indexes) {
+        if(distances.find(possible_end_index) != distances.end()) {
+            if(distances.at(possible_end_index) == best_distance_at_end) {
+                // going backwards, so flip direction
+                const std::pair<std::pair<std::size_t, std::size_t>, Direction>
+                    parts = index_to_parts(possible_end_index, board[0].size());
+                const std::size_t opposite_index = parts_to_index(
+                    parts.first.first, parts.first.second,
+                    opposite_direction.at(parts.second), board[0].size());
+                q.push(opposite_index);
+            }
+        }
+    }
+
+    while(!q.empty()) {
+        const std::size_t index = q.front();
+        q.pop();
+
+        const std::pair<std::pair<std::size_t, std::size_t>, Direction> parts =
+            index_to_parts(index, board[0].size());
+        const std::size_t row = parts.first.first;
+        const std::size_t col = parts.first.second;
+        const Direction direction = parts.second;
+
+        if(visited.find(index) != visited.end()) {
+            continue;
+        }
+        visited.insert(index);
+
+        const std::size_t opposite_index = parts_to_index(
+            row, col, opposite_direction.at(direction), board[0].size());
+        if(distances.find(opposite_index) == distances.end()) {
+            continue;
+        }
+        const std::size_t current_distance = distances.at(opposite_index);
+        distinct_positions.insert(
+            std::pair<std::size_t, std::size_t>(row, col));
+        if(current_distance == 0) {
+            continue;
+        }
+
+        const std::vector<
+            std::pair<std::pair<std::size_t, std::size_t>, Direction>>
+            neighbors = find_neighbors(board, row, col, direction);
+        for(const std::pair<std::pair<std::size_t, std::size_t>, Direction>
+                neighbor_parts : neighbors) {
+            const std::size_t next_row = neighbor_parts.first.first;
+            const std::size_t next_col = neighbor_parts.first.second;
+            const Direction next_direction = neighbor_parts.second;
+            const std::size_t next_index = parts_to_index(
+                next_row, next_col, next_direction, board[0].size());
+
+            if(visited.find(next_index) != visited.end()) {
+                continue;
+            }
+            if(distances.find(next_index) == distances.end()) {
+                continue;
+            }
+            const std::size_t next_cost = (direction == next_direction)
+                                              ? SCORE_PER_STEP
+                                              : SCORE_PER_ROTATION;
+            const std::size_t opposite_next_index = parts_to_index(
+                next_row, next_col, opposite_direction.at(next_direction),
+                board[0].size());
+            if(distances.at(opposite_next_index) ==
+               current_distance - next_cost) {
+                q.push(next_index);
+            }
+        }
+    }
+
+    return static_cast<int64_t>(distinct_positions.size());
+}
+
 } // namespace Day16
 
 auto solve_day16a() -> int64_t {
@@ -233,4 +349,15 @@ auto solve_day16a() -> int64_t {
     return Day16::find_min_score(board, start_location, end_location);
 }
 
-auto solve_day16b() -> int64_t { return 0; }
+auto solve_day16b() -> int64_t {
+    const std::tuple<std::vector<std::vector<char>>,
+                     std::pair<std::size_t, std::size_t>,
+                     std::pair<std::size_t, std::size_t>>
+        inputs = Day16::parse_input();
+    const std::vector<std::vector<char>> &board = std::get<0>(inputs);
+    const std::pair<std::size_t, std::size_t> start_location =
+        std::get<1>(inputs);
+    const std::pair<std::size_t, std::size_t> end_location =
+        std::get<2>(inputs);
+    return Day16::find_num_tiles(board, start_location, end_location);
+}
