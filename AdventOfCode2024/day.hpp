@@ -1,7 +1,7 @@
 #ifndef DAY_HPP
 #define DAY_HPP
 
-#include <cstdint>
+#include <cstdint>  // int64_t
 
 auto solve_day01a() -> int64_t;
 auto solve_day01b() -> int64_t;
@@ -35,5 +35,7 @@ auto solve_day15a() -> int64_t;
 auto solve_day15b() -> int64_t;
 auto solve_day16a() -> int64_t;
 auto solve_day16b() -> int64_t;
+auto solve_day17a() -> int64_t;
+auto solve_day17b() -> int64_t;
 
 #endif
