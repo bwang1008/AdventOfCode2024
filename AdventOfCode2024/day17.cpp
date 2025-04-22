@@ -56,9 +56,9 @@ static auto parse_input()
 
 class Computer {
   public:
-    Computer(const int64_t a, const int64_t b, const int64_t c)
+    Computer(const int64_t a, const int64_t b, const int64_t c, const bool short_circuit)
         : instruction_pointer(0), modified_instruction_pointer(false),
-          register_a(a), register_b(b), register_c(c) {
+          register_a(a), register_b(b), register_c(c), register_a_initial(a), short_circuit_identity(short_circuit) {
         this->instruction_table = {
             &Computer::instruction_adv, &Computer::instruction_bxl,
             &Computer::instruction_bst, &Computer::instruction_jnz,
@@ -134,6 +134,19 @@ class Computer {
             if(!modified_instruction_pointer) {
                 this->instruction_pointer += 2;
             }
+
+            if(this->short_circuit_identity && !this->output.empty()) {
+                if(this->output.size() > program.size()) {
+                    return;
+                }
+                const std::size_t last = this->output.size() - 1;
+                if(last >= 8) {
+                    std::cout << "Almost: last = " << last << " and a_value = " << this->register_a_initial << std::endl;
+                }
+                if(this->output[last] != program[last]) {
+                    return;
+                }
+            }
         }
     }
 
@@ -143,6 +156,8 @@ class Computer {
     int64_t register_a;
     int64_t register_b;
     int64_t register_c;
+    int64_t register_a_initial;
+    bool short_circuit_identity;
     std::vector<int> output{};
     std::vector<void (Computer::*)(int)> instruction_table{};
 
@@ -208,7 +223,7 @@ auto solve_day17a() -> int64_t {
     const int64_t register_b = std::get<2>(inputs);
     const int64_t register_c = std::get<3>(inputs);
 
-    Day17::Computer computer(register_a, register_b, register_c);
+    Day17::Computer computer(register_a, register_b, register_c, false);
     computer.run_program(program);
     const std::vector<int> output = computer.get_output();
 
@@ -224,7 +239,7 @@ auto solve_day17a() -> int64_t {
     return 0;
 }
 
-auto solve_day17b() -> int64_t {
+auto solve_day17b_old() -> int64_t {
     const std::tuple<std::vector<int>, int64_t, int64_t, int64_t> inputs =
         Day17::parse_input();
     const std::vector<int> &program = std::get<0>(inputs);
@@ -232,14 +247,74 @@ auto solve_day17b() -> int64_t {
     const int64_t register_c = std::get<3>(inputs);
 
     bool found_identity = false;
-    int64_t register_a = 0;
+    int64_t register_a = 282050000;
+    register_a = 334000000;
+    register_a = 1130000000;
 
     while(!found_identity) {
-        Day17::Computer computer(register_a, register_b, register_c);
+        if(register_a % 2000000 == 0) {
+            std::cout << "Trying " << register_a << std::endl;
+        }
+        if(!(register_a % 8 == 7 && ((register_a / 32) % 8) == 0)) {
+            ++register_a;
+            continue;
+        }
+        Day17::Computer computer(register_a, register_b, register_c, true);
         computer.run_program(program);
         const std::vector<int> output = computer.get_output();
         if(output == program) {
             found_identity = true;
+        }
+        else {
+            ++register_a;
+        }
+    }
+
+    return register_a;
+}
+
+auto solve_day17b() -> int64_t {
+    const std::tuple<std::vector<int>, int64_t, int64_t, int64_t> inputs =
+        Day17::parse_input();
+    const std::vector<int> &program = std::get<0>(inputs);
+
+    bool found_identity = false;
+    int64_t register_a = 282050000;
+    register_a = 334000000;
+    register_a = 1130000000;
+    register_a = 7150000000;
+    register_a = 281474976710656;
+
+    while(!found_identity) {
+        if(register_a % 50000000 == 0) {
+            std::cout << "Trying " << register_a << std::endl;
+        }
+        if(!(register_a % 8 == 7 && ((register_a / 32) % 8) == 0)) {
+            ++register_a;
+            continue;
+        }
+        
+        int64_t register_b = 0;
+        int64_t register_c = 0;
+        std::vector<int> output;
+        
+        int64_t working_a = register_a;
+        while(working_a != 0) {
+            register_b = (working_a % 8) ^ 2;
+            int64_t copy_a = working_a;
+            for(int i = 0; i < register_b; ++i) {
+                copy_a /= 2;
+            }
+            register_b = register_b ^ copy_a ^ 7;
+            output.push_back(register_b % 8);
+            working_a /= 8;
+        }
+
+        if(output == program) {
+            found_identity = true;
+        }
+        else {
+            ++register_a;
         }
     }
 
