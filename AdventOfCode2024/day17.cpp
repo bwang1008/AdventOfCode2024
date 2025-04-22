@@ -224,4 +224,24 @@ auto solve_day17a() -> int64_t {
     return 0;
 }
 
-auto solve_day17b() -> int64_t { return 0; }
+auto solve_day17b() -> int64_t {
+    const std::tuple<std::vector<int>, int64_t, int64_t, int64_t> inputs =
+        Day17::parse_input();
+    const std::vector<int> &program = std::get<0>(inputs);
+    const int64_t register_b = std::get<2>(inputs);
+    const int64_t register_c = std::get<3>(inputs);
+
+    bool found_identity = false;
+    int64_t register_a = 0;
+
+    while(!found_identity) {
+        Day17::Computer computer(register_a, register_b, register_c);
+        computer.run_program(program);
+        const std::vector<int> output = computer.get_output();
+        if(output == program) {
+            found_identity = true;
+        }
+    }
+
+    return register_a;
+}
