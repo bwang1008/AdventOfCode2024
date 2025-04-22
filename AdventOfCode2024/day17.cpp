@@ -38,14 +38,6 @@ So (A / 128) % 8 must be 2.
 
 At the very least, can think about generating the digits backwards and build
 out register_a initial value from it.
-
-answer = 190384615275535
-How I generated my answer: had code search for what created the last 4 numbers: [5, 5, 3, 0]
-For instance, A = 2770.
-Then I checked which of [8A, 8A + 1, ..., 8A + 7] generated [7, 5, 5, 3, 0].
-I got A2 = 8A + 3 == 22163.
-Then I checked which of [8A2, 8A2 + 1, ..., 8A2 + 7] generated [1,7,5,5,3,0]
-and so on.
 */
 
 #include <cstdint>   // std::size_t, int64_t
@@ -60,8 +52,7 @@ and so on.
 
 namespace Day17 {
 
-auto parse_input()
-    -> std::tuple<std::vector<int>, int64_t, int64_t, int64_t> {
+auto parse_input() -> std::tuple<std::vector<int>, int64_t, int64_t, int64_t> {
     const std::string input_file_name = "data/day17.txt";
     std::ifstream input_file{input_file_name};
 
@@ -106,9 +97,9 @@ auto parse_input()
 
 class Computer {
   public:
-    Computer(const int64_t a, const int64_t b, const int64_t c, const bool short_circuit)
+    Computer(const int64_t a, const int64_t b, const int64_t c)
         : instruction_pointer(0), modified_instruction_pointer(false),
-          register_a(a), register_b(b), register_c(c), register_a_initial(a), short_circuit_identity(short_circuit) {
+          register_a(a), register_b(b), register_c(c) {
         this->instruction_table = {
             &Computer::instruction_adv, &Computer::instruction_bxl,
             &Computer::instruction_bst, &Computer::instruction_jnz,
@@ -184,19 +175,6 @@ class Computer {
             if(!modified_instruction_pointer) {
                 this->instruction_pointer += 2;
             }
-
-            if(this->short_circuit_identity && !this->output.empty()) {
-                if(this->output.size() > program.size()) {
-                    return;
-                }
-                const std::size_t last = this->output.size() - 1;
-                if(last >= 8) {
-                    std::cout << "Almost: last = " << last << " and a_value = " << this->register_a_initial << std::endl;
-                }
-                if(this->output[last] != program[last]) {
-                    return;
-                }
-            }
         }
     }
 
@@ -206,8 +184,6 @@ class Computer {
     int64_t register_a;
     int64_t register_b;
     int64_t register_c;
-    int64_t register_a_initial;
-    bool short_circuit_identity;
     std::vector<int> output{};
     std::vector<void (Computer::*)(int)> instruction_table{};
 
@@ -263,44 +239,49 @@ class Computer {
     }
 };
 
-
 auto run_program(int64_t register_a) -> std::vector<int> {
     std::vector<int> output;
-    
+    const int modulus = 8;
+    const int xor_value = 7;
+
     while(register_a != 0) {
-        int64_t register_b = (register_a % 8) ^ 2;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        int64_t register_b = (register_a % modulus) ^ 2;
         int64_t register_c = register_a;
         for(int i = 0; i < register_b; ++i) {
             register_c /= 2;
         }
-        register_b ^= register_c ^ 7;
-        output.push_back(static_cast<int>(register_b % 8));
-        register_a /= 8;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        register_b ^= register_c ^ xor_value;
+        output.push_back(static_cast<int>(register_b % modulus));
+        register_a /= modulus;
     }
 
     return output;
 }
 
-/** 
- * Return initial value of register_a such that run_program(register_a) results in 
- * desired_output. Return -1 if not possible.
- * 
+/**
+ * Return initial value of register_a such that run_program(register_a) results
+ * in desired_output. Return -1 if not possible.
+ *
  * end of desired_output corresponds to most significant bits of register_a.
- * So build up digits of register_a, starting from most significant down to least significant.
- * We can do this because each digit printed by program is mainly decided by last 3 bits.
- * 
+ * So build up digits of register_a, starting from most significant down to
+ * least significant. We can do this because each digit printed by program is
+ * mainly decided by last 3 bits.
+ *
  * For instance, to build up [5, 5, 3, 0],
  * Try A = 0, A = 1, ..., A = 7 such that run_program(A) results in [0].
  * In this case, A = 5.
- * Then try A = 8 * 5 + 0, A = 8 * 5 + 1, ..., 8 * 5 + 7 such that run_program(A) results in [3, 0]. 
- * In this case, A = 8 * 5 + 3 = 43.
- * Then try A = 8 * 43 + 0, A = 8 * 43 + 1, ..., 8 * 43 + 7 such that run_program(A) results in [5, 3, 0]
- * and so on.
+ * Then try A = 8 * 5 + 0, A = 8 * 5 + 1, ..., 8 * 5 + 7 such that
+ * run_program(A) results in [3, 0]. In this case, A = 8 * 5 + 3 = 43. Then try
+ * A = 8 * 43 + 0, A = 8 * 43 + 1, ..., 8 * 43 + 7 such that run_program(A)
+ * results in [5, 3, 0] and so on.
  */
 auto get_desired_output(const std::vector<int> &desired_output) -> int64_t {
     int64_t answer = 0;
     const int division_of_a = 8;
-    for(std::vector<int>::const_reverse_iterator it = desired_output.crbegin(); it != desired_output.crend(); ++it) {
+    for(auto it = desired_output.crbegin(); it != desired_output.crend();
+        ++it) {
         const int desired_digit = *it;
         bool found_desired_digit = false;
         for(int i = 0; i < division_of_a; ++i) {
@@ -330,7 +311,7 @@ auto solve_day17a() -> int64_t {
     const int64_t register_b = std::get<2>(inputs);
     const int64_t register_c = std::get<3>(inputs);
 
-    Day17::Computer computer(register_a, register_b, register_c, false);
+    Day17::Computer computer(register_a, register_b, register_c);
     computer.run_program(program);
     const std::vector<int> output = computer.get_output();
 
