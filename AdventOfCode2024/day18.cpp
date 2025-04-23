@@ -127,4 +127,29 @@ auto solve_day18a() -> int64_t {
                                                        Day18::MAX_COLS - 1)));
 }
 
-auto solve_day18b() -> int64_t { return 0; }
+auto solve_day18b() -> int64_t {
+    const std::vector<std::pair<std::size_t, std::size_t>> obstacles =
+        Day18::parse_input();
+
+    int low = 0;
+    int high = static_cast<int>(obstacles.size());
+    while(low <= high) {
+        const int mid = (low + high) / 2;
+        const std::vector<std::vector<bool>> is_obstacle =
+            Day18::get_is_obstacle(obstacles, static_cast<std::size_t>(mid));
+        const std::size_t path_length =
+            Day18::bfs(is_obstacle, std::pair<std::size_t, std::size_t>(0, 0),
+                       std::pair<std::size_t, std::size_t>(
+                           Day18::MAX_ROWS - 1, Day18::MAX_COLS - 1));
+        if(path_length == std::numeric_limits<std::size_t>::max()) {
+            high = mid - 1;
+        } else {
+            low = mid + 1;
+        }
+    }
+    const auto min_obstacles_that_block = static_cast<std::size_t>(low);
+    const std::size_t row = obstacles[min_obstacles_that_block - 1].first;
+    const std::size_t col = obstacles[min_obstacles_that_block - 1].second;
+    std::cout << col << "," << row << std::endl;
+    return 0;
+}
