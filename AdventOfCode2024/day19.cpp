@@ -43,29 +43,22 @@ auto parse_input()
         patterns, desired);
 }
 
-auto build_output_from_patterns(const std::string &output,
-                                const std::set<std::string> &patterns) -> bool {
-    std::vector<std::vector<bool>> dp = std::vector<std::vector<bool>>(
-        output.size(), std::vector<bool>(1 + output.size(), false));
+auto count_num_ways_to_build_output_from_patterns(
+    const std::string &output, const std::set<std::string> &patterns)
+    -> int64_t {
+    std::vector<int64_t> dp(1 + output.size(), 0);
+    dp[0] = 1;
 
-    for(std::size_t size = 1; size <= output.size(); ++size) {
-        for(std::size_t start = 0; start + size <= output.size(); ++start) {
-            const std::size_t end = start + size;
-            const std::string sub = output.substr(start, size);
+    for(std::size_t end = 1; end < dp.size(); ++end) {
+        for(std::size_t mid = 0; mid < end; ++mid) {
+            const std::string sub = output.substr(mid, end - mid);
             if(patterns.find(sub) != patterns.end()) {
-                dp[start][end] = true;
-            } else {
-                for(std::size_t mid = 1 + start; mid < end; ++mid) {
-                    if(dp[start][mid] && dp[mid][end]) {
-                        dp[start][end] = true;
-                        break;
-                    }
-                }
+                dp[end] += dp[mid];
             }
         }
     }
 
-    return dp[0][output.size()];
+    return dp[output.size()];
 }
 
 } // namespace Day19
@@ -78,7 +71,8 @@ auto solve_day19a() -> int64_t {
     const std::set<std::string> patterns_set(patterns.begin(), patterns.end());
     int64_t count = 0;
     for(const std::string &desired1 : desired) {
-        if(Day19::build_output_from_patterns(desired1, patterns_set)) {
+        if(Day19::count_num_ways_to_build_output_from_patterns(
+               desired1, patterns_set) > 0) {
             ++count;
         }
     }
@@ -86,4 +80,17 @@ auto solve_day19a() -> int64_t {
     return count;
 }
 
-auto solve_day19b() -> int64_t { return 0; }
+auto solve_day19b() -> int64_t {
+    const std::pair<std::vector<std::string>, std::vector<std::string>> inputs =
+        Day19::parse_input();
+    const std::vector<std::string> patterns = inputs.first;
+    const std::vector<std::string> desired = inputs.second;
+    const std::set<std::string> patterns_set(patterns.begin(), patterns.end());
+    int64_t count = 0;
+    for(const std::string &desired1 : desired) {
+        count += Day19::count_num_ways_to_build_output_from_patterns(
+            desired1, patterns_set);
+    }
+
+    return count;
+}
