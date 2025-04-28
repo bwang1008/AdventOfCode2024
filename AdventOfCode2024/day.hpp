@@ -39,5 +39,7 @@ auto solve_day17a() -> int64_t;
 auto solve_day17b() -> int64_t;
 auto solve_day18a() -> int64_t;
 auto solve_day18b() -> int64_t;
+auto solve_day19a() -> int64_t;
+auto solve_day19b() -> int64_t;
 
 #endif

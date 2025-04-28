@@ -41,6 +41,7 @@ SET(DAYS
 	day16
 	day17
 	day18
+	day19
 )
 
 FOREACH(DAY ${DAYS})
