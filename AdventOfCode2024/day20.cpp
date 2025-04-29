@@ -1,4 +1,5 @@
 #include <algorithm> // std::min, std::replace
+#include <cmath>     // std::abs
 #include <cstdint>   // std::size_t, int64_t
 #include <fstream>   // std::ifstream
 #include <limits>    // std::numeric_limits
@@ -111,40 +112,38 @@ auto bfs(const std::vector<std::vector<char>> &board,
     return distances;
 }
 
-auto find_cheats(const std::vector<std::vector<char>> &board)
-    -> std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                             std::pair<std::size_t, std::size_t>>> {
-    std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                          std::pair<std::size_t, std::size_t>>>
+auto find_cheats_starting_from(
+    const std::vector<std::vector<char>> &board,
+    const std::pair<std::size_t, std::size_t> start_location,
+    const std::size_t max_time_to_cheat)
+    -> std::vector<
+        std::tuple<std::pair<std::size_t, std::size_t>,
+                   std::pair<std::size_t, std::size_t>, std::size_t>> {
+    std::vector<std::tuple<std::pair<std::size_t, std::size_t>,
+                           std::pair<std::size_t, std::size_t>, std::size_t>>
         cheats;
 
-    const std::vector<int> dx{0, 2, 0, -2};
-    const std::vector<int> dy{2, 0, -2, 0};
-
-    for(std::size_t row = 0; row < board.size(); ++row) {
-        for(std::size_t col = 0; col < board[row].size(); ++col) {
-            if(board[row][col] != EMPTY_SYMBOL) {
+    for(int dx = -static_cast<int>(max_time_to_cheat);
+        dx <= static_cast<int>(max_time_to_cheat); ++dx) {
+        for(int dy = -static_cast<int>(max_time_to_cheat);
+            dy <= static_cast<int>(max_time_to_cheat); ++dy) {
+            const int abs_distance = std::abs(dx) + std::abs(dy);
+            if(static_cast<std::size_t>(abs_distance) > max_time_to_cheat) {
                 continue;
             }
-
-            for(std::size_t k = 0; k < dx.size(); ++k) {
-                const int candidate_row2 = static_cast<int>(row) + dx[k];
-                const int candidate_col2 = static_cast<int>(col) + dy[k];
-                if(0 <= candidate_row2 && 0 <= candidate_col2) {
-                    const auto row2 = static_cast<std::size_t>(candidate_row2);
-                    const auto col2 = static_cast<std::size_t>(candidate_col2);
-                    if(row2 < board.size() && col2 < board[row2].size()) {
-
-                        const std::size_t between_row = (row + row2) / 2;
-                        const std::size_t between_col = (col + col2) / 2;
-
-                        if(board[between_row][between_col] == WALL_SYMBOL &&
-                           board[row2][col2] == EMPTY_SYMBOL) {
-                            cheats.emplace_back(
-                                std::pair<std::size_t, std::size_t>(row, col),
-                                std::pair<std::size_t, std::size_t>(row2,
-                                                                    col2));
-                        }
+            const int candidate_row2 =
+                static_cast<int>(start_location.first) + dx;
+            const int candidate_col2 =
+                static_cast<int>(start_location.second) + dy;
+            if(0 <= candidate_row2 && 0 <= candidate_col2) {
+                const auto row2 = static_cast<std::size_t>(candidate_row2);
+                const auto col2 = static_cast<std::size_t>(candidate_col2);
+                if(row2 < board.size() && col2 < board[row2].size()) {
+                    if(board[row2][col2] == EMPTY_SYMBOL) {
+                        cheats.emplace_back(
+                            start_location,
+                            std::pair<std::size_t, std::size_t>(row2, col2),
+                            static_cast<std::size_t>(abs_distance));
                     }
                 }
             }
@@ -154,34 +153,63 @@ auto find_cheats(const std::vector<std::vector<char>> &board)
     return cheats;
 }
 
+auto find_all_cheats(const std::vector<std::vector<char>> &board,
+                     const std::size_t max_time_to_cheat)
+    -> std::vector<
+        std::tuple<std::pair<std::size_t, std::size_t>,
+                   std::pair<std::size_t, std::size_t>, std::size_t>> {
+
+    std::vector<std::tuple<std::pair<std::size_t, std::size_t>,
+                           std::pair<std::size_t, std::size_t>, std::size_t>>
+        cheats;
+    for(std::size_t row = 0; row < board.size(); ++row) {
+        for(std::size_t col = 0; col < board[row].size(); ++col) {
+            if(board[row][col] != EMPTY_SYMBOL) {
+                continue;
+            }
+            const std::vector<
+                std::tuple<std::pair<std::size_t, std::size_t>,
+                           std::pair<std::size_t, std::size_t>, std::size_t>>
+                cheats_from_this_location = find_cheats_starting_from(
+                    board, std::pair<std::size_t, std::size_t>(row, col),
+                    max_time_to_cheat);
+            cheats.insert(cheats.end(), cheats_from_this_location.begin(),
+                          cheats_from_this_location.end());
+        }
+    }
+
+    return cheats;
+}
+
 auto find_num_cheats_that_save_time(
     const std::vector<std::vector<char>> &board,
     const std::pair<std::size_t, std::size_t> &start,
-    const std::pair<std::size_t, std::size_t> &end, const int64_t time_to_save)
+    const std::pair<std::size_t, std::size_t> &end,
+    const std::size_t max_time_to_cheat, const int64_t time_to_save)
     -> int64_t {
     int64_t num_cheats = 0;
-    const std::vector<std::pair<std::pair<std::size_t, std::size_t>,
-                                std::pair<std::size_t, std::size_t>>>
-        cheats = find_cheats(board);
+    const std::vector<
+        std::tuple<std::pair<std::size_t, std::size_t>,
+                   std::pair<std::size_t, std::size_t>, std::size_t>>
+        cheats = find_all_cheats(board, max_time_to_cheat);
     const std::vector<std::vector<std::size_t>> distances_from_start =
         bfs(board, start);
     const std::vector<std::vector<std::size_t>> distances_from_end =
         bfs(board, end);
     const std::size_t time_to_finish_without_cheats =
         distances_from_start[end.first][end.second];
-    const std::size_t time_to_cheat = 2;
 
-    for(const std::pair<std::pair<std::size_t, std::size_t>,
-                        std::pair<std::size_t, std::size_t>> &cheat_locations :
-        cheats) {
+    for(const std::tuple<std::pair<std::size_t, std::size_t>,
+                         std::pair<std::size_t, std::size_t>, std::size_t>
+            &cheat_locations : cheats) {
         const std::pair<std::size_t, std::size_t> cheat_start =
-            cheat_locations.first;
+            std::get<0>(cheat_locations);
         const std::pair<std::size_t, std::size_t> cheat_end =
-            cheat_locations.second;
+            std::get<1>(cheat_locations);
+        const std::size_t cheat_time = std::get<2>(cheat_locations);
         const std::size_t time_to_finish_with_cheat =
             distances_from_start[cheat_start.first][cheat_start.second] +
-            time_to_cheat +
-            distances_from_end[cheat_end.first][cheat_end.second];
+            cheat_time + distances_from_end[cheat_end.first][cheat_end.second];
         const int64_t time_saved =
             static_cast<int64_t>(time_to_finish_without_cheats) -
             static_cast<int64_t>(time_to_finish_with_cheat);
@@ -205,9 +233,24 @@ auto solve_day20a() -> int64_t {
         std::get<1>(inputs);
     const std::pair<std::size_t, std::size_t> end_location =
         std::get<2>(inputs);
+    const std::size_t max_time_to_cheat = 2;
     const int64_t time_to_save = 100;
-    return Day20::find_num_cheats_that_save_time(board, start_location,
-                                                 end_location, time_to_save);
+    return Day20::find_num_cheats_that_save_time(
+        board, start_location, end_location, max_time_to_cheat, time_to_save);
 }
 
-auto solve_day20b() -> int64_t { return 0; }
+auto solve_day20b() -> int64_t {
+    const std::tuple<std::vector<std::vector<char>>,
+                     std::pair<std::size_t, std::size_t>,
+                     std::pair<std::size_t, std::size_t>>
+        inputs = Day20::parse_input();
+    const std::vector<std::vector<char>> &board = std::get<0>(inputs);
+    const std::pair<std::size_t, std::size_t> start_location =
+        std::get<1>(inputs);
+    const std::pair<std::size_t, std::size_t> end_location =
+        std::get<2>(inputs);
+    const std::size_t max_time_to_cheat = 20;
+    const int64_t time_to_save = 100;
+    return Day20::find_num_cheats_that_save_time(
+        board, start_location, end_location, max_time_to_cheat, time_to_save);
+}
