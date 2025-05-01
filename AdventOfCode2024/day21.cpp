@@ -11,6 +11,7 @@
 
 namespace Day21 {
 
+constexpr char ACCEPT_KEY = 'A';
 constexpr char UNKNOWN_KEY = '?';
 
 auto parse_input() -> std::vector<std::string> {
@@ -83,32 +84,60 @@ auto navigate_keypad(const std::vector<std::string> &directional_keypad)
     return min_button_pushes_to_navigate_directional_keypad;
 }
 
-} // namespace Day21
+auto print_keypad_directions(
+    const std::map<std::pair<char, char>, std::string> &keypad_directions)
+    -> void {
+    for(const auto &keypad_direction : keypad_directions) {
+        std::cout << "(" << keypad_direction.first.first << ", "
+                  << keypad_direction.first.second << ") -> "
+                  << keypad_direction.second << std::endl;
+    }
+}
 
-auto solve_day21a() -> int64_t {
+auto step_one_layer_up(
+    const std::string &initial_steps,
+    const std::map<std::pair<char, char>, std::string> &keypad_directions)
+    -> std::string {
+    std::string steps;
+    for(std::size_t i = 0; i + 1 < initial_steps.size(); ++i) {
+        steps += keypad_directions.at(
+            std::pair<char, char>(initial_steps[i], initial_steps[i + 1]));
+        steps += std::string(1, ACCEPT_KEY);
+    }
+
+    return steps;
+}
+
+auto steps_to_enter_passcode(const std::string &passcode, const int num_robots)
+    -> std::string {
+    const std::vector<std::string> numeric_keypad{"789", "456", "123", "?0A"};
     const std::vector<std::string> directional_keypad{"?^A", "<v>"};
+    const std::map<std::pair<char, char>, std::string>
+        numeric_keypad_directions = Day21::navigate_keypad(numeric_keypad);
     const std::map<std::pair<char, char>, std::string>
         directional_keypad_directions =
             Day21::navigate_keypad(directional_keypad);
-    for(const auto &directional_keypad_direction :
-        directional_keypad_directions) {
-        std::cout << "(" << directional_keypad_direction.first.first << ", "
-                  << directional_keypad_direction.first.second << ") -> "
-                  << directional_keypad_direction.second << std::endl;
-    }
 
+    print_keypad_directions(numeric_keypad_directions);
     std::cout << "====================================" << std::endl;
+    print_keypad_directions(directional_keypad_directions);
 
-    const std::vector<std::string> numeric_keypad{"789", "456", "123", "?0A"};
-    const std::map<std::pair<char, char>, std::string>
-        numeric_keypad_directions =
-            Day21::find_min_button_pushes_to_navigate_keypad(numeric_keypad);
-    for(const auto &numeric_keypad_direction : numeric_keypad_directions) {
-        std::cout << "(" << numeric_keypad_direction.first.first << ", "
-                  << numeric_keypad_direction.first.second << ") -> "
-                  << numeric_keypad_direction.second << std::endl;
+    std::string steps = passcode;
+    std::cout << "Start with passcode " << steps << std::endl;
+    for(int i = 0; i < num_robots; ++i) {
+        steps = step_one_layer_up(std::string(1, ACCEPT_KEY) + steps,
+                                  (i == 0) ? numeric_keypad_directions
+                                           : directional_keypad_directions);
+        std::cout << "Now steps[" << steps.size() << "] = " << steps
+                  << std::endl;
     }
+    return steps;
+}
 
+} // namespace Day21
+
+auto solve_day21a() -> int64_t {
+    Day21::steps_to_enter_passcode("980A", 3);
     return 0;
 }
 
