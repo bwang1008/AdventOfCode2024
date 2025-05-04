@@ -20,7 +20,7 @@ auto solve(const std::size_t day, const std::string &problem_version)
         &solve_day15a, &solve_day15b, &solve_day16a, &solve_day16b,
         &solve_day17a, &solve_day17b, &solve_day18a, &solve_day18b,
         &solve_day19a, &solve_day19b, &solve_day20a, &solve_day20b,
-        &solve_day21a, &solve_day21b};
+        &solve_day21a, &solve_day21b, &solve_day22a, &solve_day22b};
 
     int64_t (*const specific_solver_function)() =
         problem_to_solver.at(star_index);
