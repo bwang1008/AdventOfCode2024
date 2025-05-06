@@ -49,6 +49,7 @@ auto solve_day22a() -> int64_t;
 auto solve_day22b() -> int64_t;
 auto solve_day23a() -> int64_t;
 auto solve_day23b() -> int64_t;
-
+auto solve_day24a() -> int64_t;
+auto solve_day24b() -> int64_t;
 
 #endif
